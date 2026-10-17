@@ -79,6 +79,65 @@ test("loadConfig enables the legacy tool through config or environment", async (
   }
 });
 
+test("loadConfig asks before forming a team by default", async () => {
+  const root = mkdtempSync(join(tmpdir(), "pi-intercom-config-"));
+  const previous = process.env.PI_INTERCOM_TEAM_APPROVAL;
+  delete process.env.PI_INTERCOM_TEAM_APPROVAL;
+  try {
+    await withAgentDir(root, () => {
+      assert.equal(loadConfig().teamApproval, true);
+    });
+  } finally {
+    if (previous === undefined) delete process.env.PI_INTERCOM_TEAM_APPROVAL;
+    else process.env.PI_INTERCOM_TEAM_APPROVAL = previous;
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("loadConfig lets PI_INTERCOM_TEAM_APPROVAL override the file", async () => {
+  const root = mkdtempSync(join(tmpdir(), "pi-intercom-config-"));
+  const previous = process.env.PI_INTERCOM_TEAM_APPROVAL;
+  try {
+    mkdirSync(join(root, "intercom"), { recursive: true });
+    writeFileSync(join(root, "intercom", "config.json"), JSON.stringify({ teamApproval: true }));
+    delete process.env.PI_INTERCOM_TEAM_APPROVAL;
+    await withAgentDir(root, () => assert.equal(loadConfig().teamApproval, true));
+    process.env.PI_INTERCOM_TEAM_APPROVAL = "0";
+    await withAgentDir(root, () => assert.equal(loadConfig().teamApproval, false));
+    writeFileSync(join(root, "intercom", "config.json"), JSON.stringify({ teamApproval: false }));
+    process.env.PI_INTERCOM_TEAM_APPROVAL = "1";
+    await withAgentDir(root, () => assert.equal(loadConfig().teamApproval, true));
+    process.env.PI_INTERCOM_TEAM_APPROVAL = "false";
+    await withAgentDir(root, () => assert.equal(loadConfig().teamApproval, false));
+  } finally {
+    if (previous === undefined) delete process.env.PI_INTERCOM_TEAM_APPROVAL;
+    else process.env.PI_INTERCOM_TEAM_APPROVAL = previous;
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("loadConfig fails closed when PI_INTERCOM_TEAM_APPROVAL is invalid", async () => {
+  const root = mkdtempSync(join(tmpdir(), "pi-intercom-config-"));
+  const previous = process.env.PI_INTERCOM_TEAM_APPROVAL;
+  const previousError = console.error;
+  process.env.PI_INTERCOM_TEAM_APPROVAL = "sometimes";
+  console.error = () => undefined;
+  try {
+    mkdirSync(join(root, "intercom"), { recursive: true });
+    writeFileSync(join(root, "intercom", "config.json"), JSON.stringify({ teamApproval: false, inboundTrigger: "replies" }));
+    await withAgentDir(root, () => {
+      const config = loadConfig();
+      assert.equal(config.teamApproval, true);
+      assert.equal(config.inboundTrigger, "never");
+    });
+  } finally {
+    console.error = previousError;
+    if (previous === undefined) delete process.env.PI_INTERCOM_TEAM_APPROVAL;
+    else process.env.PI_INTERCOM_TEAM_APPROVAL = previous;
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("loadConfig handles invalid legacy-tool environment consistently without config.json", async () => {
   const root = mkdtempSync(join(tmpdir(), "pi-intercom-config-"));
   const previous = process.env.PI_INTERCOM_LEGACY_TOOL;

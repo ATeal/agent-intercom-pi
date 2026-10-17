@@ -27,21 +27,29 @@ This skill covers how to handle those orchestrator-side escalations.
 ## Task Teams: Ask Once, Then Organize (Pi 0.14+)
 
 Independently opened Pi sessions do not form a team merely by sharing a directory.
-When the user asks you to collaborate with named sessions (for example `front`
-and `writer`) or delegate work, and this task has no approved team, ask once:
+The `intercom_join` tool guidelines decide whether you ask before forming a team.
+
+By default (`teamApproval: true`), when the user asks you to collaborate with
+named sessions (for example `front` and `writer`) or delegate work, and this
+task has no approved team, ask once:
 
 > 要把我、front、writer 组成一个 team 来负责这个任务吗？
 
 Wait for approval before creating a team or adding peers. An explicit instruction
 to create/join a team is already approval. Do not ask again for the same approved
 team, and do not prompt the user when replying to an inbound team message. If the
-user declines, do not repeatedly ask or silently create a team. Without a shared
-team, omit `team` to send an ungrouped direct message, even if either session
-belongs to unrelated teams. This allows initial contact before forming a team.
-Explicit team messages still require both sessions to be members; multiple
-shared teams still require selecting the intended task team.
+user declines, do not repeatedly ask or silently create a team.
 
-After approval, discover the named sessions and form the team in one operation:
+If those guidelines say a request to collaborate or delegate is enough
+(`teamApproval: false` or `PI_INTERCOM_TEAM_APPROVAL=0`), form the team without
+asking. Do not ask, and do not wait for a separate approval.
+
+Without a shared team, omit `team` to send an ungrouped direct message, even if
+either session belongs to unrelated teams. This allows initial contact before
+forming a team. Explicit team messages still require both sessions to be members;
+multiple shared teams still require selecting the intended task team.
+
+Once the guidelines allow it, discover the named sessions and form the team in one operation:
 
 ```typescript
 intercom_list({})

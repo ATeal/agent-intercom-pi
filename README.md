@@ -56,7 +56,9 @@ Open Pi normally in separate terminals; no startup team, session name for the
 coordinator, or terminal multiplexer is required. When you ask an agent to work
 with `front` and `writer`, its tool guidelines tell it to ask once whether to form
 a team. After approval (or an explicit request to form a team), it discovers the
-sessions and creates the task group itself:
+sessions and creates the task group itself. Set `teamApproval` to false, or
+`PI_INTERCOM_TEAM_APPROVAL=0`, when that request should be enough and the agent
+should not ask.
 
 ```typescript
 intercom_join({ name: "launch", create: true, members: ["front", "writer"], work: "Build the product page" })
@@ -776,6 +778,7 @@ Create `~/.pi/agent/intercom/config.json`:
   "enabled": true,
   "replyHint": true,
   "legacyTool": false,
+  "teamApproval": true,
   "status": "researching"
 }
 ```
@@ -789,6 +792,7 @@ Create `~/.pi/agent/intercom/config.json`:
 | `enabled` | true | Enable/disable intercom entirely |
 | `replyHint` | true | Include reply instruction in incoming messages |
 | `legacyTool` | false | Expose the deprecated monolithic `intercom({ action: ... })` tool. Compatibility only; can also be enabled with `PI_INTERCOM_LEGACY_TOOL=1`, and scheduled for removal at the next major boundary. |
+| `teamApproval` | true | Ask once before forming a task team with named sessions. Set false so a request to collaborate or delegate is enough. `PI_INTERCOM_TEAM_APPROVAL` overrides the file (`1`, `true`, `yes`, `0`, `false`, `no`). |
 | `status` | — | Optional custom status suffix shown after the automatic lifecycle status, for example `thinking · researching` |
 
 If `config.json` cannot be parsed or contains an invalid value, pi-intercom logs the error and fails closed for inbound broker auto-triggering by using `inboundTrigger: "never"` until the config is fixed.
@@ -804,7 +808,7 @@ Custom broker commands are trusted local configuration: anyone who can edit this
 
 Pi-intercom publishes live session status automatically. Sessions register as `idle`, switch to `thinking` while the agent is running, and show `tool:<name>` during tool execution. They remain busy through automatic retries, compaction, and queued continuations until `agent_settled`. Normal settlement returns to `idle`; on Pi 1.1.0 or newer, `aborted: true` shows `cancelled` until the next run or session start. Older hosts without the `aborted` field continue to show `idle` after settlement. If `status` is set in config, it is appended as context instead of replacing the lifecycle status.
 
-By default, runtime state and config live under `~/.pi/agent/intercom`. If Pi is launched with `PI_CODING_AGENT_DIR`, pi-intercom uses `$PI_CODING_AGENT_DIR/intercom` instead, including `config.json`, broker PID/lock files, sockets, durable inboxes/outboxes, ask state, and launcher state. `PI_INTERCOM_ASK_WAIT_MS` controls the foreground ask wait (30 seconds by default); `PI_INTERCOM_ASK_TIMEOUT_MS` controls how long a deferred ask remains replyable (10 minutes by default).
+By default, runtime state and config live under `~/.pi/agent/intercom`. If Pi is launched with `PI_CODING_AGENT_DIR`, pi-intercom uses `$PI_CODING_AGENT_DIR/intercom` instead, including `config.json`, broker PID/lock files, sockets, durable inboxes/outboxes, ask state, and launcher state. `PI_INTERCOM_ASK_WAIT_MS` controls the foreground ask wait (30 seconds by default); `PI_INTERCOM_ASK_TIMEOUT_MS` controls how long a deferred ask remains replyable (10 minutes by default). `PI_INTERCOM_TEAM_APPROVAL` overrides `teamApproval` for that process.
 
 ## How It Works
 

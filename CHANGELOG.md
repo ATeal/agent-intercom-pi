@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add `teamApproval` (default true) and `PI_INTERCOM_TEAM_APPROVAL`. Set either to false to drop the ask-once task-team prompt. A request to collaborate with or delegate to named sessions is then enough to form the team. Reuse, explicit membership, and ungrouped first contact stay the same. The environment variable overrides `config.json`.
+
 ## 0.14.4 - 2026-10-11
 
 - Add `intercom-send --wait-reply <seconds>` to keep the temporary return address alive until a reply, disconnect, or timeout. Support ordinary acknowledgements and correlated replies without replacing an existing Pi session.

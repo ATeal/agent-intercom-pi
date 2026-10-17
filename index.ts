@@ -15,6 +15,7 @@ import { InlineMessageComponent } from "./ui/inline-message.ts";
 import { formatMessageTiming } from "./ui/timestamps.ts";
 import { formatSessionDisplayName, sanitizeDisplayText, sessionOriginLabel, shortestUniqueIdPrefixes } from "./ui/session-identity.ts";
 import { getAskTimeoutMs, getAskWaitMs, loadConfig, type IntercomConfig } from "./config.ts";
+import { intercomJoinGuidance } from "./join-guidance.ts";
 import type { SessionInfo, SessionRegistration, Message, Attachment } from "./types.ts";
 import { pendingAskId, replyContextId, ReplyTracker, type IntercomContext } from "./reply-tracker.ts";
 import { appendNamedTeamMembership, formatNamedTeamRoster, namedTeamRoster, requireNamedTeamMembers, resolveNamedMessageTeam, sessionNamedTeams } from "./named-team-membership.ts";
@@ -2894,14 +2895,7 @@ Usage:
     executionMode: "sequential",
     label: "Intercom Join",
     description: "List, join, or create a task team. Joining appends membership without leaving other named teams. The manager can add connected sessions using members; the creator need not have a session name.",
-    promptSnippet: "After user approval, form a task team with the named sessions they want to collaborate with.",
-    promptGuidelines: [
-      "For independent Pi sessions: when the user asks you to collaborate with named Pi sessions or delegate work, and this task has no approved team, ask once whether to form a team with you and those sessions (for example: 要把我、front、writer 组成一个 team 来负责这个任务吗？). Wait for approval before creating a team or adding peers.",
-      "An explicit user request to create/join a team is approval. Do not ask again for an approved team or in an inbound team-message turn. If the user declines, do not keep prompting or silently create a team. Without a shared team, send an ungrouped direct message by omitting `team`; belonging to an unrelated team must not prevent initial contact. Explicit team messages still require both sessions to be members.",
-      "After approval, discover the intended sessions, then use intercom_join({ name: \"launch\", create: true, members: [\"front\", \"writer\"], work: \"Current task\" }). The tool adds everyone together; do not ask the user to join each terminal manually.",
-      "Reuse the approved team for the same task and append new approved members. Joining another team preserves previous memberships. The same participants doing a different task may need a different team.",
-      "Pass `team` when sending task messages, especially if peers share multiple teams. Replies inherit their original message's team automatically.",
-    ],
+    ...intercomJoinGuidance(config.teamApproval),
     parameters: Type.Object({
       name: Type.Optional(Type.String({ description: "Team name to join. Omit to list joinable teams." })),
       create: Type.Optional(Type.Boolean({ description: "Create this named team and join as manager. Requires name." })),

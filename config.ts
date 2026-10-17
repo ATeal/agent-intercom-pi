@@ -57,6 +57,9 @@ export interface IntercomConfig {
 
   /** Expose the deprecated monolithic `intercom` tool to models (default: false) */
   legacyTool: boolean;
+
+  /** Ask once before forming a task team. False treats a collaboration or delegation request as enough (default: true) */
+  teamApproval: boolean;
 }
 
 export function getConfigPath(intercomDir: string = getIntercomDirPath()): string {
@@ -71,15 +74,25 @@ const defaults: IntercomConfig = {
   enabled: true,
   replyHint: true,
   legacyTool: false,
+  teamApproval: true,
 };
 
-function applyEnvironment(config: IntercomConfig): IntercomConfig {
-  const legacyToolEnv = process.env.PI_INTERCOM_LEGACY_TOOL?.trim().toLowerCase();
-  if (!legacyToolEnv) return config;
-  if (!["1", "true", "yes", "0", "false", "no"].includes(legacyToolEnv)) {
-    throw new Error("PI_INTERCOM_LEGACY_TOOL must be one of: 1, true, yes, 0, false, no");
+const BOOLEAN_ENV_VALUES = ["1", "true", "yes", "0", "false", "no"];
+
+function readBooleanEnv(name: string): boolean | undefined {
+  const raw = process.env[name]?.trim().toLowerCase();
+  if (!raw) return undefined;
+  if (!BOOLEAN_ENV_VALUES.includes(raw)) {
+    throw new Error(`${name} must be one of: 1, true, yes, 0, false, no`);
   }
-  config.legacyTool = ["1", "true", "yes"].includes(legacyToolEnv);
+  return ["1", "true", "yes"].includes(raw);
+}
+
+function applyEnvironment(config: IntercomConfig): IntercomConfig {
+  const legacyTool = readBooleanEnv("PI_INTERCOM_LEGACY_TOOL");
+  if (legacyTool !== undefined) config.legacyTool = legacyTool;
+  const teamApproval = readBooleanEnv("PI_INTERCOM_TEAM_APPROVAL");
+  if (teamApproval !== undefined) config.teamApproval = teamApproval;
   return config;
 }
 
@@ -166,6 +179,13 @@ export function loadConfig(): IntercomConfig {
         throw new Error(`"legacyTool" must be a boolean`);
       }
       config.legacyTool = parsedConfig.legacyTool;
+    }
+
+    if (Object.hasOwn(parsedConfig, "teamApproval")) {
+      if (typeof parsedConfig.teamApproval !== "boolean") {
+        throw new Error(`"teamApproval" must be a boolean`);
+      }
+      config.teamApproval = parsedConfig.teamApproval;
     }
 
     if (Object.hasOwn(parsedConfig, "status")) {
